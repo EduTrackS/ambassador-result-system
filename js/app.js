@@ -9,7 +9,7 @@ const FROM_EMAIL    = "results@yourdomain.com";
 // ════════════════════════════════════════════════════
 // SCHOOL LOGO — change this to your actual logo path
 // ════════════════════════════════════════════════════
-const SCHOOL_LOGO_URL = "YOUR_LOGO_HERE.png";
+const SCHOOL_LOGO_URL = "images/logo.png";
 // ════════════════════════════════════════════════════
 
 const SCHOOL_CONTACTS = {
