@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ambassador International Secondary School — Result Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <!-- Linked CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-brand">🎓 <strong style="font-size:20px;font-family:'Playfair Display',serif;letter-spacing:0.5px;color:white;">AMBASSADOR INTERNATIONAL SECONDARY SCHOOL</strong><span style="color:#8bbfff;font-size:12px;font-family:'DM Sans',sans-serif;display:none;" class="topbar-tagline">&nbsp;— Result Management System</span></div>
+  <div class="topbar-right">
+    <button class="nav-btn" onclick="showPage('student-page')">Check Result</button>
+    <button class="nav-btn" onclick="showPage('annual-student-page')" style="border-color:#0A84FF;color:#8bbfff;">🏆 Annual Result</button>
+    <button class="nav-btn gold" onclick="openAdminModal()">Teacher Login</button>
+  </div>
+  <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu" id="mobile-menu">
+  <button class="nav-btn" onclick="showPage('student-page');closeMobileMenu()">Check Result</button>
+  <button class="nav-btn" onclick="showPage('annual-student-page');closeMobileMenu()" style="border-color:white;color:white;">🏆 Annual Result</button>
+  <button class="nav-btn gold" onclick="openAdminModal();closeMobileMenu()">Teacher Login</button>
+</div>
+
+<!-- SCROLLING ADVERT BANNER -->
+</style>
+<div class="advert-ticker" aria-label="School advertisement">
+  <div class="advert-ticker-inner">
+    🌟 Welcome to <strong>Ambassador International Secondary School</strong> — The Best Place for Your Children to Receive Quality Education!
+    <span class="sep">★</span>
+    🎓 We are Fully Equipped with Highly Qualified, Dedicated, and Experienced Teachers Who Bring Out the Best in Every Child.
+    <span class="sep">★</span>
+    📚 At Ambassador International Secondary School, We Provide a Nurturing Environment That Combines Academic Excellence with Strong Moral Values.
+    <span class="sep">★</span>
+    🏫 Our World-Class Facilities and Passionate Educators Ensure That Every Student Reaches Their Full Potential — Enrol Your Child Today!
+    <span class="sep">★</span>
+    ✨ Ambassador International Secondary School — Where Excellence Meets Character, and Every Child Matters.
+    <span class="sep">★</span>
+    🌟 Welcome to <strong>Ambassador International Secondary School</strong> — The Best Place for Your Children to Receive Quality Education!
+  </div>
+</div>
+
+<!-- PAGE 1: STUDENT SEARCH -->
+<div class="page active" id="student-page">
+  <div class="hero">
+    <h1>Student Result Portal</h1>
+    <p>Enter your details below to view and download your result slip</p>
+    <div style="max-width:480px;margin:0 auto 20px;">
+      <div class="deploy-status-bar" id="student-deploy-bar">
+        <span class="blink-dot blink-red" id="student-deploy-dot"></span>
+        <span id="student-deploy-label" style="color:var(--text);">Checking result availability...</span>
+      </div>
+    </div>
+    <div class="search-card hidden" id="student-gate-locked">
+      <div class="result-gate-locked">
+        <div class="lock-icon">&#128274;</div>
+        <h2>Results Not Yet Available</h2>
+        <p>Your results have not been released yet. Please check back later or contact your school administration.</p>
+      </div>
+    </div>
+    <div class="search-card hidden" id="student-search-card">
+      <h3>Check Your Result</h3>
+      <div class="field"><label>Full Name (as recorded)</label><input type="text" id="s-name" placeholder="e.g. John Adamu Bello"/></div>
+      <div class="field"><label>Student ID / Admission Number</label><input type="text" id="s-id" placeholder="e.g. STD/2024/001"/></div>
+      <div class="grid-2" style="gap:12px;margin-bottom:16px;">
+        <div class="field" style="margin:0"><label>Term</label>
+          <select id="s-term"><option value="">Select Term</option><option>First Term</option><option>Second Term</option><option>Third Term</option></select>
+        </div>
+        <div class="field" style="margin:0"><label>Session</label><input type="text" id="s-session" placeholder="e.g. 2024/2025"/></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="fetchStudentResult()">&#128269; View Result Slip</button>
+      <div id="s-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: RESULT SLIP -->
+<div class="page" id="result-slip-page">
+  <div class="slip-outer">
+    <div class="slip-actions flex-between mb-16">
+      <button class="btn btn-outline" onclick="showPage('student-page')">← Back to Search</button>
+      <div class="flex gap-8">
+        <button class="btn btn-primary" onclick="downloadPDF()">⬇ Download PDF</button>
+        <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+      </div>
+    </div>
+    <div class="slip" id="the-slip">
+      <div class="slip-header">
+
+        <!-- ════════════════════════════════════════════════
+             SCHOOL LOGO — Replace src value with your logo
+             Examples:
+               src="images/logo.png"
+               src="https://yourwebsite.com/logo.png"
+        ════════════════════════════════════════════════ -->
+        <img
+          id="slip-logo"
+          class="slip-header-logo"
+          src="YOUR_LOGO_HERE.png"
+          alt="School Logo"
+          onerror="this.style.display='none';document.getElementById('slip-logo-placeholder').style.display='flex'"
+        />
+        <!-- ════════════════════════════════════════════════ -->
+
+        <div id="slip-logo-placeholder" class="slip-header-logo-placeholder" style="display:none;">🎓</div>
+        <div class="slip-header-text">
+          <div class="slip-school" id="slip-school">SCHOOL NAME</div>
+          <div class="slip-subtitle">Student Academic Report</div>
+        </div>
+      </div>
+      <div class="slip-title" id="slip-term-session">FIRST TERM RESULT — 2024/2025</div>
+      <div class="slip-body">
+        <div class="slip-info-grid" id="slip-info-grid"></div>
+        <table class="slip-table">
+          <thead><tr><th style="text-align:left">Subject</th><th>CA1</th><th>CA2</th><th>CA3</th><th>Exam</th><th>Total</th><th>Grade</th><th>Remark</th><th>Position</th></tr></thead>
+          <tbody id="slip-subjects"></tbody>
+        </table>
+        <div class="slip-summary" id="slip-summary"></div>
+        <div class="slip-traits-grid">
+          <div class="slip-traits-box">
+            <h4>Psychomotor &amp; Behavioural Traits</h4>
+            <div id="slip-traits"></div>
+          </div>
+          <div class="slip-traits-box">
+            <h4>Grading Key</h4>
+            <div class="slip-trait-row"><span>A — 75 &amp; Above</span><span>Distinction</span></div>
+            <div class="slip-trait-row"><span>B — 65–74</span><span>Very Good</span></div>
+            <div class="slip-trait-row"><span>C — 55–64</span><span>Good</span></div>
+            <div class="slip-trait-row"><span>D — 40–54</span><span>Fair</span></div>
+            <div class="slip-trait-row"><span>E — 0–39</span><span>Poor</span></div>
+          </div>
+        </div>
+        <div class="slip-remark"><strong>Teacher's Remark</strong><span id="slip-remark">—</span></div>
+        <div class="slip-next-term" id="slip-next-term"></div>
+        <div class="slip-sigs">
+          <div class="slip-sig"><div class="sig-line"></div><div>Class Teacher</div></div>
+          <div class="slip-sig"><div class="sig-line"></div><div id="slip-principal">Principal</div></div>
+          <div class="slip-sig"><div class="sig-line"></div><div>Date</div></div>
+        </div>
+      </div>
+        </div>
+      </div>
+      <!-- QR CODE VERIFICATION — above footer, below signatures -->
+      <div id="slip-qr-section" style="display:flex;align-items:center;justify-content:flex-end;padding:6px 18px 4px;gap:10px;">
+        <div style="text-align:right;font-size:9px;color:#001B44;line-height:1.5;">
+          <div style="font-weight:700;letter-spacing:0.5px;">SCAN TO VERIFY</div>
+          <div style="color:#4a5f7a;font-size:8px;">Official Result Verification</div>
+          <div style="color:#4a5f7a;font-size:7.5px;margin-top:2px;">Powered by SolexGift Tech</div>
+        </div>
+        <div id="slip-qr-canvas-wrap" style="border:1.5px solid #001B44;border-radius:4px;padding:2px;background:#fff;"></div>
+      </div>
+      <!-- FOOTER: School name only. -->
+      <div class="slip-footer">
+        Ambassador International Secondary School &nbsp;&mdash;&nbsp; <span>Excellence in Education</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: TEACHER PORTAL -->
+<div class="page" id="teacher-page">
+  <div class="teacher-wrap">
+    <div class="flex-between mb-16" style="flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;color:var(--primary);font-size:22px;">Teacher Portal</h2>
+        <p style="font-size:13px;color:var(--muted);">Upload and manage student results</p>
+      </div>
+      <div class="flex gap-8 teacher-header-btns">
+        <div class="deploy-status-bar" id="deploy-status-bar" style="padding:7px 14px;gap:10px;display:none;">
+          <span class="blink-dot" id="teacher-deploy-dot"></span>
+          <span id="teacher-deploy-label" style="font-size:12px;color:var(--text);"></span>
+        </div>
+        <button class="btn-deploy-toggle" id="teacher-deploy-btn" onclick="toggleResultDeployment()" style="display:none;">⏳ Loading...</button>
+        <button class="btn btn-gold" onclick="showPage('analytics-page');loadAnalytics()">&#128202; Terminal Report</button>
+        <button class="btn deploy-btn" id="deploy-annual-btn" onclick="openDeployModal()" style="display:none;">&#127942; Deploy Annual Result</button>
+        <button class="btn btn-success" onclick="openSendEmailModal()">&#128231; Send Results to Parents</button>
+        <button class="btn" id="principal-role-btn" onclick="openRoleModal('principal')" style="display:none;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;border:none;">🎓 Principal Access</button>
+        <button class="btn" id="headteacher-role-btn" onclick="openRoleModal('headteacher')" style="display:none;background:linear-gradient(135deg,#0369a1,#075985);color:white;border:none;">📚 Head Teacher Access</button>
+        <button class="btn" id="cashier-role-btn" onclick="openRoleModal('cashier')" style="display:none;background:linear-gradient(135deg,#15803d,#166534);color:white;border:none;">💰 Cashier Access</button>
+        <button class="btn btn-outline" onclick="teacherLogout()">Logout</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="upload-tab-btn" onclick="switchTab('upload-tab',this)">➕ Upload Result</button>
+      <button class="tab" id="manage-tab-btn" onclick="switchTab('manage-tab',this);loadStudentList()" style="display:none;">📋 Manage Students</button>
+      <button class="tab" id="fee-tab-btn" onclick="switchTab('fee-tab',this);loadFeeDefaulters()" style="display:none;">💰 Fee Defaulters</button>
+    </div>
+    <div id="upload-tab">
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Student Bio Data</span></div>
+        <div class="grid-2">
+          <div class="field"><label>School Name</label><input id="t-school" value="AMBASSADOR INTERNATIONAL SECONDARY SCHOOL"/></div>
+          <div class="field"><label>Student Full Name *</label><input id="t-name" placeholder="Full name as it will appear on result"/></div>
+          <div class="field"><label>Student ID / Admission No *</label><input id="t-id" placeholder="e.g. STD/2024/001"/></div>
+          <div class="field"><label>Gender *</label><select id="t-gender"><option value="">Select Gender</option><option value="male">Male</option><option value="female">Female</option></select></div>
+          <div class="field"><label>Age</label><input type="number" id="t-age" placeholder="Age"/></div>
+          <div class="field"><label>Class *</label><input id="t-class" placeholder="e.g. JSS 1A"/></div>
+          <div class="field"><label>Term *</label><select id="t-term"><option value="">Select Term</option><option>First Term</option><option>Second Term</option><option>Third Term</option></select></div>
+          <div class="field"><label>Session *</label><input id="t-session" placeholder="e.g. 2024/2025"/></div>
+          <div class="field"><label>Parent Email (optional)</label><input type="email" id="t-email" placeholder="parent@email.com"/></div>
+          <div class="field"><label>Parent Phone</label><input id="t-phone" placeholder="Phone number"/></div>
+          <div class="field"><label>Next Term Begins</label><input type="date" id="t-next-begin"/></div>
+          <div class="field"><label>Next Term Ends</label><input type="date" id="t-next-end"/></div>
+        </div>
+        <div class="field"><label>Principal Name</label><input id="t-principal" placeholder="Principal's full name"/></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Psychomotor &amp; Behavioural Traits</span></div>
+        <div class="grid-2">
+          <div>
+            <div class="trait-row"><label>Neatness</label><select id="tr-neatness"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Obedience</label><select id="tr-obedience"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Punctuality</label><select id="tr-punctuality"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+          </div>
+          <div>
+            <div class="trait-row"><label>Attentiveness</label><select id="tr-attentiveness"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Initiative</label><select id="tr-initiative"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Self Control</label><select id="tr-selfcontrol"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Subject Scores</span>
+          <button class="btn btn-gold" onclick="addSubjectRow()" style="padding:8px 16px;font-size:13px;">+ Add Subject</button>
+        </div>
+        <div class="subject-label">
+          <span>Subject Name</span><span>CA1</span><span>CA2</span><span>CA3</span><span>Exam</span><span>Total</span><span>Del</span>
+        </div>
+        <div id="subjects-container"></div>
+        <div class="field mt-16">
+          <label>Teacher's Remark (auto-generated — you may edit)</label>
+          <textarea id="t-remark" rows="2"></textarea>
+        </div>
+      </div>
+      <div id="upload-status"></div>
+      <button class="btn btn-primary btn-full" style="padding:14px;" onclick="saveStudent()">💾 Save Student Result</button>
+    </div>
+    <div id="manage-tab" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Uploaded Students</span>
+          <div class="flex gap-8" style="flex-wrap:wrap;">
+            <input id="filter-class" placeholder="Filter by class" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" oninput="filterStudents()"/>
+            <input id="filter-term" placeholder="Filter by term" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" oninput="filterStudents()"/>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="students-table">
+            <thead><tr><th>Name</th><th>ID</th><th>Class</th><th>Term</th><th>Session</th><th>Total</th><th>Actions</th></tr></thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+        <div id="manage-status" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- FEE DEFAULTERS TAB -->
+    <div id="fee-tab" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">💰 Fee Defaulters</span>
+          <div class="flex gap-8" style="flex-wrap:wrap;align-items:center;">
+            <input id="fee-filter" placeholder="Search by name, ID or class…" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:220px;" oninput="filterFeeDefaulters()"/>
+            <button class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="openAddDefaulterModal()">+ Add Defaulter</button>
+          </div>
+        </div>
+        <div class="alert alert-warning" style="font-size:13px;margin-bottom:16px;">🚫 Students listed here <strong>cannot access their results</strong> until removed.</div>
+        <div style="overflow-x:auto;">
+          <table class="students-table">
+            <thead><tr><th>Student Name</th><th>Student ID</th><th>Class</th><th>Term</th><th>Session</th><th>Action</th></tr></thead>
+            <tbody id="fee-defaulters-tbody"></tbody>
+          </table>
+        </div>
+        <div id="fee-status" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4: ANALYTICS -->
+<div class="page" id="analytics-page">
+  <div class="wrap-wide">
+    <div class="flex-between mb-16" style="flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;color:var(--primary);font-size:24px;">📊 Terminal Report</h2>
+        <p style="font-size:13px;color:var(--muted);">School-wide performance analysis</p>
+      </div>
+      <div class="flex gap-8" style="flex-wrap:wrap;">
+        <select id="analytics-term" onchange="loadAnalytics()" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+          <option value="">All Terms</option><option>First Term</option><option>Second Term</option><option>Third Term</option>
+        </select>
+        <input id="analytics-session" placeholder="Session e.g. 2024/2025" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;" oninput="loadAnalytics()"/>
+        <button class="btn btn-outline" onclick="showPage('teacher-page')">← Back</button>
+      </div>
+    </div>
+    <div id="analytics-loading" class="text-center" style="padding:40px;color:var(--muted);">Loading analytics...</div>
+    <div id="analytics-content" class="hidden">
+      <div class="stats-grid" id="a-stats"></div>
+      <div class="chart-grid">
+        <div class="chart-box"><h3>Gender Performance Comparison</h3><canvas id="chart-gender"></canvas></div>
+        <div class="chart-box"><h3>Class Performance Ranking</h3><canvas id="chart-class"></canvas></div>
+        <div class="chart-box"><h3>Grade Distribution</h3><canvas id="chart-grades"></canvas></div>
+        <div class="chart-box"><h3>Subject Average Scores</h3><canvas id="chart-subjects"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🏆 Top 3 Students Per Class</span></div>
+        <div class="top-students-grid" id="a-top-students"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">⚠️ At-Risk Students (Failed 3+ Subjects)</span></div>
+        <ul class="at-risk-list" id="a-at-risk"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: ANNUAL STUDENT PORTAL -->
+<div class="page" id="annual-student-page">
+  <div class="annual-hero">
+    <div class="annual-badge">🏆 Annual Result Portal</div>
+    <h1>Annual Academic Result</h1>
+    <p>Enter your details below to view your full-year cumulative result</p>
+    <div class="search-card">
+      <h3 style="color:#001B44;">Check Annual Result</h3>
+      <div class="alert alert-info" style="font-size:12px;margin-bottom:16px;">This portal shows annual results only. For term results, use the <a href="#" onclick="showPage('student-page')" style="color:#1d4ed8;font-weight:600;">Term Result Portal</a>.</div>
+      <div class="field"><label>Student ID / Admission Number</label><input type="text" id="as-id" placeholder="e.g. STD/2024/001"/></div>
+      <div class="field"><label>Session</label><input type="text" id="as-session" placeholder="e.g. 2024/2025"/></div>
+      <button class="btn btn-full" style="background:linear-gradient(135deg,#001B44,#003366);color:white;padding:12px;box-shadow:0 3px 14px rgba(0,27,68,0.3);" onclick="fetchAnnualResult()">🔍 View Annual Result</button>
+      <div id="as-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6: ANNUAL RESULT SLIP -->
+<div class="page" id="annual-slip-page" style="background:#d0daea;">
+  <div class="slip-outer">
+    <div class="slip-actions flex-between mb-16">
+      <button class="btn btn-outline" onclick="showPage('annual-student-page')">← Back to Annual Portal</button>
+      <button class="btn" style="background:linear-gradient(135deg,#001B44,#003366);color:white;box-shadow:0 3px 14px rgba(0,27,68,0.3);" onclick="downloadAnnualPDF()">⬇ Download PDF</button>
+    </div>
+    <div class="annual-slip" id="the-annual-slip">
+      <div class="annual-slip-header">
+
+        <!-- ════════════════════════════════════════════════
+             ANNUAL SLIP LOGO — Replace src with your logo
+        ════════════════════════════════════════════════ -->
+        <img
+          id="annual-slip-logo"
+          class="slip-header-logo"
+          src="YOUR_LOGO_HERE.png"
+          alt="School Logo"
+          onerror="this.style.display='none'"
+        />
+        <!-- ════════════════════════════════════════════════ -->
+
+        <div class="slip-header-text">
+          <div class="slip-school" id="annual-slip-school">SCHOOL NAME</div>
+          <div class="slip-subtitle">Annual Academic Report</div>
+        </div>
+      </div>
+      <div class="annual-slip-title" id="annual-slip-session-label">ANNUAL RESULT — 2024/2025</div>
+      <div class="slip-body">
+        <div class="slip-info-grid" id="annual-slip-info-grid"></div>
+        <div class="annual-term-scores" id="annual-term-scores"></div>
+        <div class="annual-final-box" id="annual-final-box"></div>
+        <div class="slip-traits-box" style="margin-bottom:20px;">
+          <h4>Grading Key</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;">
+            <div class="slip-trait-row"><span>A — 75 &amp; Above</span><span>Distinction</span></div>
+            <div class="slip-trait-row"><span>B — 65–74</span><span>Very Good</span></div>
+            <div class="slip-trait-row"><span>C — 55–64</span><span>Good</span></div>
+            <div class="slip-trait-row"><span>D — 40–54</span><span>Fair</span></div>
+            <div class="slip-trait-row"><span>E — 0–39</span><span>Poor</span></div>
+          </div>
+        </div>
+        <div class="slip-sigs">
+          <div class="slip-sig"><div class="sig-line"></div><div>Class Teacher</div></div>
+          <div class="slip-sig"><div class="sig-line"></div><div id="annual-slip-principal">Principal</div></div>
+          <div class="slip-sig"><div class="sig-line"></div><div>Date</div></div>
+        </div>
+      </div>
+      <!-- FOOTER: School name only -->
+      <div class="slip-footer">
+        Ambassador International Secondary School &nbsp;&mdash;&nbsp; <span>Excellence in Education</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <h2>Teacher Login</h2>
+    <p>Enter your credentials to access the upload portal</p>
+    <div class="field"><label>Email</label><input type="email" id="admin-email" placeholder="teacher@school.com"/></div>
+    <div class="field"><label>Password</label><input type="password" id="admin-pass" placeholder="Your password"/></div>
+    <div id="admin-status"></div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary btn-full" onclick="doAdminLogin()">Login</button>
+      <button class="btn btn-outline" onclick="closeAdminModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROLE LOGIN MODAL — Principal / Head Teacher / Cashier second login -->
+<div class="modal-overlay" id="role-modal">
+  <div class="modal" style="max-width:420px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div id="role-modal-icon" style="font-size:48px;margin-bottom:8px;"></div>
+      <h2 id="role-modal-title" style="margin:0 0 6px;"></h2>
+      <p id="role-modal-sub" style="font-size:13px;color:var(--muted);margin:0;"></p>
+    </div>
+    <div class="field"><label>Email</label><input type="email" id="role-email" placeholder="your@school.com"/></div>
+    <div class="field"><label>Password</label><input type="password" id="role-pass" placeholder="Your password"/></div>
+    <div id="role-status"></div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary btn-full" id="role-login-btn" onclick="doRoleLogin()">🔓 Unlock Access</button>
+      <button class="btn btn-outline" onclick="closeRoleModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD DEFAULTER MODAL -->
+<div class="modal-overlay" id="add-defaulter-modal">
+  <div class="modal" style="max-width:460px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h2 style="margin:0;">🚫 Add Fee Defaulter</h2>
+      <button onclick="closeAddDefaulterModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Enter the student ID to look up their details.</p>
+    <div class="field"><label>Student ID *</label>
+      <div style="display:flex;gap:8px;">
+        <input id="df-student-id" placeholder="e.g. STD/2024/001" style="flex:1;"/>
+        <button class="btn btn-outline" style="padding:10px 14px;font-size:13px;white-space:nowrap;" onclick="lookupDefaulterStudent()">🔍 Lookup</button>
+      </div>
+    </div>
+    <div id="df-lookup-result" style="display:none;background:#f0f4ff;border:1.5px solid #c5cde0;border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;">
+      <div style="font-weight:700;color:var(--primary);margin-bottom:4px;" id="df-student-name-display"></div>
+      <div style="color:var(--muted);" id="df-student-meta-display"></div>
+      <input type="hidden" id="df-name"/><input type="hidden" id="df-class"/>
+      <input type="hidden" id="df-term"/><input type="hidden" id="df-session"/>
+    </div>
+    <div id="df-status"></div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-danger btn-full" id="df-save-btn" onclick="saveDefaulter()" disabled>🚫 Add to Defaulters</button>
+      <button class="btn btn-outline" onclick="closeAddDefaulterModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEE GATE MODAL — shown to student when blocked -->
+<div class="modal-overlay" id="fee-gate-modal">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="font-size:60px;margin-bottom:8px;">🚫</div>
+    <h2 style="color:var(--danger);font-size:22px;margin-bottom:10px;">Access Restricted</h2>
+    <p id="fee-gate-message" style="font-size:14px;color:var(--text);line-height:1.7;margin-bottom:18px;"></p>
+    <div style="background:#fff8e1;border:1.5px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:20px;font-size:13px;color:#92400e;">
+      📞 Please contact the school bursar for assistance.
+    </div>
+    <button class="btn btn-primary btn-full" onclick="document.getElementById('fee-gate-modal').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<!-- SEND EMAIL MODAL -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <h2>Send Results to Parents</h2>
+    <p>PDF result slips will be sent to all parents with an email address on file.</p>
+    <div class="field"><label>Filter by Term</label>
+      <select id="em-term"><option value="">All Terms</option><option>First Term</option><option>Second Term</option><option>Third Term</option></select>
+    </div>
+    <div class="field"><label>Filter by Session</label><input id="em-session" placeholder="e.g. 2024/2025"/></div>
+    <div id="email-status"></div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-success btn-full" onclick="sendResultsToParents()">📧 Send All Emails</button>
+      <button class="btn btn-outline" onclick="document.getElementById('email-modal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STUDENT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal" style="max-width:700px;width:95%;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h2 style="margin:0;">✏️ Edit Student Record</h2>
+      <button onclick="closeEditModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">✕</button>
+    </div>
+    <p>Edit bio data and subject scores before deploying for students to see.</p>
+    <input type="hidden" id="edit-db-id"/>
+
+    <div style="max-height:65vh;overflow-y:auto;padding-right:6px;">
+      <!-- BIO DATA -->
+      <div style="background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">📋 Bio Data</div>
+        <div class="grid-2">
+          <div class="field"><label>Full Name *</label><input id="edit-name" placeholder="Student full name"/></div>
+          <div class="field"><label>Student ID *</label><input id="edit-id" placeholder="e.g. STD/2024/001"/></div>
+          <div class="field"><label>Gender</label><select id="edit-gender"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+          <div class="field"><label>Age</label><input type="number" id="edit-age" placeholder="Age"/></div>
+          <div class="field"><label>Class *</label><input id="edit-class" placeholder="e.g. JSS 1A"/></div>
+          <div class="field"><label>Term *</label><select id="edit-term"><option value="">Select Term</option><option>First Term</option><option>Second Term</option><option>Third Term</option></select></div>
+          <div class="field"><label>Session *</label><input id="edit-session" placeholder="e.g. 2024/2025"/></div>
+          <div class="field"><label>School Name</label><input id="edit-school" placeholder="School name"/></div>
+          <div class="field"><label>Parent Email</label><input type="email" id="edit-email" placeholder="parent@email.com"/></div>
+          <div class="field"><label>Parent Phone</label><input id="edit-phone" placeholder="Phone number"/></div>
+          <div class="field"><label>Next Term Begins</label><input type="date" id="edit-next-begin"/></div>
+          <div class="field"><label>Next Term Ends</label><input type="date" id="edit-next-end"/></div>
+        </div>
+        <div class="field"><label>Principal Name</label><input id="edit-principal" placeholder="Principal's full name"/></div>
+      </div>
+
+      <!-- TRAITS -->
+      <div style="background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">🧠 Psychomotor &amp; Behavioural Traits</div>
+        <div class="grid-2">
+          <div>
+            <div class="trait-row"><label>Neatness</label><select id="edit-neatness"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Obedience</label><select id="edit-obedience"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Punctuality</label><select id="edit-punctuality"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+          </div>
+          <div>
+            <div class="trait-row"><label>Attentiveness</label><select id="edit-attentiveness"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Initiative</label><select id="edit-initiative"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+            <div class="trait-row"><label>Self Control</label><select id="edit-selfcontrol"><option value="5">A — Excellent</option><option value="4">B — Good</option><option value="3">C — Fair</option><option value="2">D — Weak</option><option value="1">E — Poor</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBJECT SCORES -->
+      <div style="background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;">📚 Subject Scores</div>
+          <button class="btn btn-gold" onclick="addEditSubjectRow()" style="padding:6px 14px;font-size:12px;">+ Add Subject</button>
+        </div>
+        <div class="subject-label">
+          <span>Subject Name</span><span>CA1</span><span>CA2</span><span>CA3</span><span>Exam</span><span>Total</span><span>Del</span>
+        </div>
+        <div id="edit-subjects-container"></div>
+        <div class="field" style="margin-top:12px;">
+          <label>Teacher's Remark</label>
+          <textarea id="edit-remark" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div id="edit-status" style="margin:8px 0;"></div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary btn-full" onclick="saveEditedStudent()" id="edit-save-btn">💾 Save Changes</button>
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEPLOY ANNUAL RESULT MODAL -->
+<div class="modal-overlay" id="deploy-modal">
+  <div class="modal" style="max-width:560px;">
+    <h2>🏆 Deploy Annual Result</h2>
+    <p>This will collect each student's 1st, 2nd, and 3rd term averages and publish their annual result.</p>
+
+    <div class="field" style="margin-top:12px;"><label>Session *</label><input id="deploy-session" placeholder="e.g. 2024/2025"/></div>
+    <div id="deploy-status"></div>
+    <div class="hidden" id="deploy-progress-wrap" style="margin-top:8px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;" id="deploy-progress-label">Processing...</div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="deploy-progress-bar" style="width:0%"></div></div>
+    </div>
+    <div class="flex gap-8 mt-16">
+      <button class="btn deploy-btn btn-full" onclick="deployAnnualResult()" id="deploy-btn">🚀 Deploy Now</button>
+      <button class="btn btn-outline" onclick="document.getElementById('deploy-modal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Linked JavaScript -->
+  <script src="js/app.js"></script>
+
+
+<!-- VERIFY PAGE — shown when QR code is scanned -->
+<div class="page" id="verify-page">
+  <div style="max-width:700px;margin:40px auto;padding:0 16px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:36px;margin-bottom:8px;">🔍</div>
+      <h1 style="font-size:22px;color:#001B44;margin:0 0 6px;">Result Verification Portal</h1>
+      <p style="font-size:13px;color:#4a5f7a;margin:0;">Ambassador International Secondary School — Official Academic Records</p>
+    </div>
+    <div id="verify-status"></div>
+    <div id="verify-card" style="display:none;border-radius:12px;border:1.5px solid #001B44;overflow:hidden;box-shadow:0 4px 28px rgba(0,27,68,0.14);"></div>
+    <div style="text-align:center;margin-top:20px;">
+      <a href="/" id="verify-back-link" style="font-size:13px;color:#4a5f7a;text-decoration:none;">← Back to main site</a>
+    </div>
+  </div>
+</div>
+
+</html>
