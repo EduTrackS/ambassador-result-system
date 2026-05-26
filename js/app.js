@@ -1499,5 +1499,3 @@ setInterval(function(){
       '</div>';
   }
 }, 1000);
-
-</script>
